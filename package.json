@@ -1,0 +1,26 @@
+{
+  "name": "ayurtech-average-api",
+  "version": "1.0.0",
+  "description": "Running Average REST API Server for Ayurtech Assignment",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest",
+    "client": "node client.js",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "Chandan T S",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "husky": "^9.1.6",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
