@@ -1,38 +1,74 @@
+/**
+ * @file Express application factory for the Ayurtech Average API.
+ * @module app
+ */
+
 const express = require('express');
-
-const app = express();
-app.use(express.json());
-
-let totalSum = 0;
-let totalCount = 0;
+const store = require('./averageStore');
 
 /**
- * Route handler for calculating running average.
- * @route POST /average
+ * Creates and configures an Express application exposing the `/average` endpoint.
+ *
+ * @returns {import('express').Express} The configured Express app.
  */
-app.post('/average', (req, res) => {
-  const { number } = req.body;
+function createApp() {
+  const app = express();
+  app.use(express.json());
 
-  if (typeof number !== 'number' || Number.isNaN(number)) {
-    return res.status(400).json({
-      error: 'Invalid input. Please provide a valid numeric value.',
+  /**
+   * POST /average
+   *
+   * Request body: `{ "number": <number> }`
+   *   Also accepts a bare numeric body (`42`) for convenience.
+   *
+   * Response: `{ "average": <number>, "count": <number> }`
+   *
+   * @name PostAverage
+   * @route POST /average
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {void}
+   */
+  app.post('/average', (req, res) => {
+    const raw =
+      req.body && typeof req.body === 'object' && 'number' in req.body
+        ? req.body.number
+        : req.body;
+
+    const value = typeof raw === 'string' ? Number(raw) : raw;
+
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return res.status(400).json({
+        error: 'Request body must contain a finite number, e.g. { "number": 5 }',
+      });
+    }
+
+    store.add(value);
+
+    return res.status(200).json({
+      average: store.getAverage(),
+      count: store.count(),
     });
-  }
+  });
 
-  totalSum += number;
-  totalCount += 1;
+  /**
+   * GET /health — lightweight readiness probe.
+   *
+   * @name Health
+   * @route GET /health
+   * @param {import('express').Request} _req
+   * @param {import('express').Response} res
+   * @returns {void}
+   */
+ app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
 
-  const average = totalSum / totalCount;
+  app.resetState = () => {    // ← ADD THESE 3 LINES
+    store.reset();
+  };
 
-  return res.status(200).json({ average });
-});
+  return app;
+}
 
-/**
- * Resets memory state between test runs.
- */
-app.resetState = () => {
-  totalSum = 0;
-  totalCount = 0;
-};
-
-module.exports = app;
+module.exports = { createApp };

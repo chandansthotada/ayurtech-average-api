@@ -1,15 +1,18 @@
 const request = require('supertest');
-const app = require('./src/app');
+const { createApp } = require('./src/app');
+
+let app;
+
+beforeEach(() => {
+  app = createApp();
+  app.resetState();
+});
 
 describe('POST /average API Tests', () => {
-  beforeEach(() => {
-    app.resetState();
-  });
-
   it('should return correct initial average', async () => {
     const res = await request(app).post('/average').send({ number: 10 });
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ average: 10 });
+    expect(res.body).toEqual({ average: 10, count: 1 });
   });
 
   it('should calculate running average correctly', async () => {
@@ -18,7 +21,7 @@ describe('POST /average API Tests', () => {
     const res = await request(app).post('/average').send({ number: 30 });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ average: 20 });
+    expect(res.body).toEqual({ average: 20, count: 3 });
   });
 
   it('should reject non-numeric inputs', async () => {
