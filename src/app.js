@@ -14,6 +14,7 @@ const store = require('./averageStore');
 function createApp() {
   const app = express();
   app.use(express.json());
+  app.use(express.static('public'));
 
   /**
    * POST /average
@@ -48,6 +49,7 @@ function createApp() {
     return res.status(200).json({
       average: store.getAverage(),
       count: store.count(),
+      sum:store.getSum(),
     });
   });
 

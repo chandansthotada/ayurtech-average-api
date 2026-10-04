@@ -34,6 +34,13 @@ function getAverage() {
   const sum = numbers.reduce((acc, n) => acc + n, 0);
   return sum / numbers.length;
 }
+/**
+ * Returns the sum of all stored numbers.
+ * @returns {number}
+ */
+function getSum() {
+  return numbers.reduce((a, b) => a + b, 0);
+}
 
 /**
  * Returns the number of items currently stored.
@@ -54,4 +61,4 @@ function reset() {
   numbers.length = 0;
 }
 
-module.exports = { add, getAverage, count, reset };
+module.exports = { add, getAverage, getSum ,count, reset };

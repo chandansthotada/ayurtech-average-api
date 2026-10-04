@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ayurtech Average API</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Average Calculator</h1>
+    <p class="subtitle">Enter a number and see the running average.</p>
+
+    <form id="form">
+      <input
+        id="number"
+        type="number"
+        step="any"
+        placeholder="e.g. 42"
+        required
+        autofocus
+      />
+      <button type="submit">Submit</button>
+    </form>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="label">Average</span>
+        <span id="average" class="value">—</span>
+      </div>
+      <div class="stat">
+        <span class="label">Count</span>
+        <span id="count" class="value">—</span>
+      </div>
+      <div class="stat">
+        <span class="label">Sum</span>
+        <span id="sum" class="value">—</span>
+      </div>
+    </div>
+
+    <div id="error" class="error" hidden></div>
+
+    <h2>History</h2>
+    <ul id="history" class="history"></ul>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
