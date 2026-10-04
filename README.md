@@ -1,10 +1,8 @@
 # Ayurtech Average API
 
-A simple REST API that accepts a number via `POST /average` and returns the
-**running average of all numbers** it has been called with so far.
+A Node.js REST API that accepts a number via `POST /average` and returns the **running average**, **count**, and **sum** of all numbers submitted since the server started.
 
-Built with **Node.js** and **Express**, tested with **Jest + Supertest**, and
-gated by **Husky** git hooks that enforce **Conventional Commits**.
+Comes with a **live web UI**, a **command-line client**, a **Jest + Supertest test suite**, and **Husky git hooks** that enforce Conventional Commits.
 
 ![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
 ![Express](https://img.shields.io/badge/express-4.x-blue)
@@ -26,14 +24,16 @@ gated by **Husky** git hooks that enforce **Conventional Commits**.
 
 ## ✨ Features
 
-- `POST /average` — submit a number, get back the running average
-- `GET /health` — lightweight readiness probe
-- Input validation (rejects non-finite / non-numeric values with `400`)
-- In-memory store (server-lifetime) — see [Design Notes](#-design-notes)
-- CLI client + `curl` + Postman support
-- Jest + Supertest test suite with coverage
-- Git hooks: pre-commit lint + test, commit-msg Conventional Commits check
-- Full JSDoc annotations on all public functions
+- **`POST /average`** — submit a number, get back the running average
+- **`GET /health`** — lightweight readiness probe
+- **Web UI** — live calculator served at `http://localhost:3000`
+- **Input validation** — rejects non-finite / non-numeric values with `400`
+- **In-memory store** — server-lifetime state, no DB required
+- **CLI client** — `client/cli.js` using native `fetch`
+- **Multiple clients documented** — Web UI, cURL, CLI, Postman
+- **Jest + Supertest test suite** with coverage
+- **Git hooks** — pre-commit lint + test, commit-msg Conventional Commits check
+- **Full JSDoc annotations** on all public functions
 
 ---
 
@@ -42,18 +42,21 @@ gated by **Husky** git hooks that enforce **Conventional Commits**.
 ```
 ayurtech-average-api/
 ├── .husky/
-│   ├── pre-commit          # runs lint-staged (eslint + related tests)
-│   └── commit-msg          # runs commitlint
+│   ├── pre-commit              # runs lint-staged (eslint + related tests)
+│   └── commit-msg              # runs commitlint
 ├── client/
-│   └── cli.js              # command-line client
+│   └── cli.js                  # command-line client
+├── public/                     # web UI (served by Express)
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
 ├── src/
-│   ├── app.js              # Express app factory + routes
-│   ├── server.js           # HTTP server entry point
-│   └── averageStore.js     # in-memory running-average store
-├── tests/
-│   └── average.test.js     # Jest + Supertest integration tests
-├── .eslintrc.json
+│   ├── app.js                  # Express app factory + routes
+│   ├── server.js               # HTTP server entry point
+│   └── averageStore.js         # in-memory running-average store
+├── server.test.js              # Jest + Supertest integration tests
 ├── .gitignore
+├── LICENSE
 ├── commitlint.config.js
 ├── package.json
 ├── package-lock.json
@@ -77,8 +80,8 @@ cd ayurtech-average-api
 npm install
 ```
 
-> `npm install` automatically runs the `prepare` script which executes
-> `husky install`, activating the git hooks.
+> `npm install` automatically runs the `prepare` script, which executes
+> `husky install` and activates the git hooks.
 
 ---
 
@@ -118,9 +121,18 @@ A bare numeric body (`42`) is also accepted for convenience.
 ```json
 {
   "average": 42,
-  "count": 1
+  "count": 1,
+  "sum": 42
 }
 ```
+
+**Example: multiple requests**
+
+| # | Sent | Response |
+|---|:----:|----------|
+| 1 | 10 | `{ "average": 10, "count": 1, "sum": 10 }` |
+| 2 | 20 | `{ "average": 15, "count": 2, "sum": 30 }` |
+| 3 | 30 | `{ "average": 20, "count": 3, "sum": 60 }` |
 
 **Error response — `400 Bad Request`**
 
@@ -142,29 +154,37 @@ A bare numeric body (`42`) is also accepted for convenience.
 
 ## 🧪 Calling the API
 
-### Option 1 — cURL
+### Option 1 — Web UI (Easiest)
+
+1. Start the server: `npm start`
+2. Open [http://localhost:3000](http://localhost:3000) in your browser
+3. Type a number and click **Submit**
+4. The **Average**, **Count**, and **Sum** update live after each submission
+5. Number history is displayed below the stats
+
+### Option 2 — cURL
 
 ```bash
 # First call
 curl -X POST http://localhost:3000/average \
      -H "Content-Type: application/json" \
      -d '{"number": 10}'
-# → {"average":10,"count":1}
+# → {"average":10,"count":1,"sum":10}
 
 # Second call
 curl -X POST http://localhost:3000/average \
      -H "Content-Type: application/json" \
      -d '{"number": 20}'
-# → {"average":15,"count":2}
+# → {"average":15,"count":2,"sum":30}
 
 # Third call
 curl -X POST http://localhost:3000/average \
      -H "Content-Type: application/json" \
      -d '{"number": 30}'
-# → {"average":20,"count":3}
+# → {"average":20,"count":3,"sum":60}
 ```
 
-### Option 2 — Bundled CLI Client
+### Option 3 — Bundled CLI Client
 
 ```bash
 node client/cli.js 42
@@ -176,7 +196,7 @@ node client/cli.js 100
 node client/cli.js 5 --url http://localhost:4000
 ```
 
-### Option 3 — Postman
+### Option 4 — Postman
 
 1. Create a new `POST` request to `http://localhost:3000/average`
 2. Body → raw → JSON
@@ -262,6 +282,8 @@ git commit -m "added stuff"     # blocked by commitlint
   the response always reflects at least that value.
 - **Input validation.** Non-finite values (`NaN`, `Infinity`, `null`, strings
   that don't parse to numbers) are rejected with HTTP `400`.
+- **Frontend is served from the same origin** — `express.static('public')` — so
+  no CORS configuration is needed.
 
 ---
 
@@ -290,10 +312,80 @@ Declared explicitly in `package.json`:
 |-------|------------|
 | Runtime | Node.js ≥ 18 |
 | Framework | Express 4 |
+| Frontend | HTML5, CSS3, Vanilla JS (fetch API) |
 | Testing | Jest + Supertest |
 | Linting | ESLint |
 | Git Hooks | Husky + lint-staged + commitlint |
-| Client | CLI (native `fetch`) + cURL + Postman |
+| Clients | Web UI + CLI (native `fetch`) + cURL + Postman |
+
+---
+
+## 🎤 Demonstrating to the Evaluator
+
+Follow these steps to verify every feature of this project:
+
+1. **Clone and install**
+
+   ```bash
+   git clone https://github.com/chandansthotada/ayurtech-average-api.git
+   cd ayurtech-average-api
+   npm install
+   ```
+
+2. **Start the server**
+
+   ```bash
+   npm start
+   ```
+
+   You should see: `Ayurtech Average API listening on http://localhost:3000`
+
+3. **Open the web UI**
+
+   Go to [http://localhost:3000](http://localhost:3000) in your browser.
+   Submit `10`, then `20`, then `30`. Watch the Average / Count / Sum
+   values update live with each submission.
+
+4. **Use the CLI client**
+
+   In a second terminal:
+
+   ```bash
+   node client/cli.js 100
+   # → Sent 100 → average = 40 (n=4)
+   ```
+
+5. **Verify input validation**
+
+   ```bash
+   curl -X POST http://localhost:3000/average \
+     -H "Content-Type: application/json" \
+     -d '{"number": "abc"}'
+   # → 400 with descriptive error
+   ```
+
+6. **Run the test suite**
+
+   ```bash
+   npm test
+   # → All tests pass with coverage summary
+   ```
+
+7. **See git hooks in action**
+
+   Try a bad commit message:
+
+   ```bash
+   git commit -m "random stuff"
+   # → Rejected by commitlint
+   ```
+
+   Try a valid one:
+
+   ```bash
+   git commit -m "feat: demonstrate conventional commits"
+   # → Accepted (after tests pass)
+   ```
 
 ---
 
